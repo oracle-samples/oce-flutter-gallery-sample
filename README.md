@@ -1,8 +1,8 @@
-# About Flutter Blog Sample
+# About Flutter Image Gallery Sample
 
-This repository holds the sample source code for a [Flutter](https://flutter.dev) implementation of a blog app powered by Oracle Content Management.
+This repository holds the sample source code for a [Flutter](https://flutter.dev) implementation of an image gallery app powered by Oracle Content Management.
 
-Please follow the [tutorial](https://www.oracle.com/pls/topic/lookup?ctx=cloud&id=oce-flutter-blog-sample).
+Please follow the [tutorial](https://www.oracle.com/pls/topic/lookup?ctx=cloud&id=oce-flutter-gallery-sample).
 
 ## Images
 

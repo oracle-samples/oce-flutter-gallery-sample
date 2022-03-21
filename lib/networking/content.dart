@@ -2,31 +2,31 @@
  * Copyright (c) 2022, Oracle and/or its affiliates.
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/
  */
+
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart';
-import 'package:oceflutterblogsample/config/oce.dart';
-import 'package:oceflutterblogsample/utils/strings.dart';
+import 'package:ocefluttergallerysample/config/oce.dart';
+import 'package:ocefluttergallerysample/utils/strings.dart';
 
 import '../models/app_exceptions.dart';
 
 class Content {
-
   // Initialize constructor with config data
   Content() {
     data = config;
   }
 
-  late dynamic data;
+  dynamic data;
 
   // Utility method to build up the URL for published content.
   //
   // Eg.returns : https://host:port/content/published/api/v1.1/
   // @returns published content server URL
   String _getPublishedContentServerURL() {
-    final String? serverUrl = data['serverUrl'] as String?;
-    final String? apiVersion = data['apiVersion'] as String?;
+    final String serverUrl = data['serverUrl'] as String;
+    final String apiVersion = data['apiVersion'] as String;
     return '$serverUrl/content/published/api/$apiVersion/';
   }
 
@@ -35,7 +35,7 @@ class Content {
   // @param {*} currUrl  the current URL to add the channel token to
   // @returns the URL with the channel token added
   String _addChannelToURL(String currUrl) {
-    final String? channelToken = data['channelToken'] as String?;
+    final String channelToken = data['channelToken'] as String;
     return '$currUrl?channelToken=$channelToken';
   }
 
@@ -46,6 +46,7 @@ class Content {
   //@throws FetchDataException, BadRequestException, UnauthorizedException
   Future<dynamic> _get(String url) async {
     dynamic responseJson;
+    //print('url to be fetched=$url');
     try {
       final Response response = await get(Uri.parse(url));
       responseJson = _returnResponse(response);
@@ -61,8 +62,8 @@ class Content {
   dynamic _returnResponse(Response response) {
     switch (response.statusCode) {
       case 200:
-        final Map<String, dynamic>? responseJson =
-            json.decode(response.body.toString()) as Map<String, dynamic>?;
+        final Map<String, dynamic> responseJson =
+            json.decode(response.body.toString()) as Map<String, dynamic>;
         return responseJson;
       case 400:
         throw BadRequestException(response.body.toString());
@@ -104,43 +105,50 @@ class Content {
     return await _get(url);
   }
 
-  //Get the id from the json arguments
-  //
-  //@param args the json object passed to the function
-  //@returns the id
-  String _getIdFromArgs(Map<String, String?> args) {
-    String? id = args['id'];
+  String getIdFromArgs(Map<String, String> args) {
+    String id = args['id'];
     if (id == null) {
       id = args['ID'];
     }
     if (id == null) {
       id = args['itemGUID'];
     }
-    return id!;
+    return id;
   }
 
-
-   // Get a single item given its ID. <br/>
-   // @param {object} args - A json object containing the "getItem" parameters.
-   // @param {string} args.id - The ID of the content item to return.
-   // @returns {Future<dynamic>} A future dynamic object that can be used to retrieve the data after the call has completed.
-   // @example
-   // var data = sdk.getItem({
-   //     'id': contentId
-   // });
-   // print(data);
-  Future<dynamic> getItem(Map<String, String?> args) async {
-    String guid = _getIdFromArgs(args);
+  Future<dynamic> getItem(Map<String, String> args) async {
+    String guid = getIdFromArgs(args);
     String url = _getPublishedContentServerURL() + 'items';
     url = '$url/$guid';
     // add the channel token to the URL
     url = _addChannelToURL(url);
     // add query params to the url
-    args.forEach((String key, String? value) {
+    args.forEach((String key, String value) {
       url = '$url&$key=$value';
     });
     return await _get(url);
   }
+
+  Future<dynamic> getTaxonomies() async {
+    String url = _getPublishedContentServerURL() + 'taxonomies';
+    // add the channel token to the URL
+    url = _addChannelToURL(url);
+    return await _get(url);
+  }
+
+  Future<dynamic> queryTaxonomyCategories(Map<String, String> args) async {
+    String guid = getIdFromArgs(args);
+    String url = _getPublishedContentServerURL() + 'taxonomies';
+    url = '$url/$guid/categories';
+    // add the channel token to the URL
+    url = _addChannelToURL(url);
+    // add query params to the url
+    args.forEach((String key, String value) {
+      url = '$url&$key=$value';
+    });
+    return await _get(url);
+  }
+
 
   // Create the medium rendition URL to render an image asset into the page.
   //
@@ -152,8 +160,8 @@ class Content {
   //     'id': digitalAssetId
   // }));
   //https://host:port/content/published/api/v1.1/assets/{digitalAssetId}/Medium?format=jpg&type=responsiveimage&channelToken={channelToken}"
-  String? getMediumRenditionUrl(Map<String, String?> args) {
-    final String? itemId = args['id'];
+  String getMediumRenditionUrl(Map<String, String> args) {
+    final String itemId = args['id'];
     if (itemId == null) return null;
     String url = _getPublishedContentServerURL();
     url = '${url}assets/$itemId/Medium';
@@ -173,8 +181,8 @@ class Content {
   //     'id': digitalAssetId
   // }));
   // @example returns https://host:port/content/published/api/v1.1/assets/{digitalAssetId}/native?channelToken={channelToken}"
-  String? getRenditionURL(Map<String, String?> args) {
-    final String? itemId = args['id'];
+  String getRenditionURL(Map<String, String> args) {
+    final String itemId = args['id'];
     if (itemId == null) return null;
     String url = _getPublishedContentServerURL();
     url = '${url}assets/$itemId/native';

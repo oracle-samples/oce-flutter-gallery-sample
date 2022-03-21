@@ -2,122 +2,90 @@
  * Copyright (c) 2022, Oracle and/or its affiliates.
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/
  */
-import 'package:oceflutterblogsample/models/article_model.dart';
-import 'package:oceflutterblogsample/models/article_list_item_model.dart';
-import 'package:oceflutterblogsample/models/topic_list_model.dart';
-import 'package:oceflutterblogsample/models/topic_list_item_model.dart';
-import 'package:oceflutterblogsample/models/article_list_model.dart';
+
 import 'content.dart';
 
 //Helper class for making all the API calls needed for the app
 class Services {
-
-  // Fetch the top level values to be displayed on the home page.
-  //
-  // @returns TopicListModel
-  Future<TopicListModel> fetchHomePage() async {
+  // Fetch the taxonomies for the channel set in the delivery client.
+  // @returns {*} - array of taxonomy ids for the channel
+  Future<List<String>> fetchTaxonomies() async {
     final Content content = Content();
     try {
-      final dynamic topicListData = await content.queryItems(<String, String>{
-        'q': '(type eq "OCEGettingStartedHomePage" AND name eq "HomePage")',
-        'fields': 'all',
-      });
-      return TopicListModel.fromJson(topicListData);
-    } catch (exception) {
-      rethrow;
-    }
-  }
-
-  // Fetch details about the specific topic
-  //
-  // @param {String} topicId - the id of the topic
-  // @returns TopicListItemModel
-  Future<TopicListItemModel> fetchTopic(topicId) async {
-    final Content content = Content();
-    try {
-      final dynamic data = await content.getItem(<String, String?>{
-        'id': topicId,
-        'fields': 'all',
-        'expand': 'all',
-      });
-      TopicListItemModel topicListItemModel = TopicListItemModel.fromJson(data);
-      topicListItemModel.thumbnailUrl = getMediumRenditionUrl(topicListItemModel.thumbnailId);
-      return topicListItemModel;
-    } catch (exception) {
-      rethrow;
-    }
-  }
-
-  // Get all the articles for the specified topic.
-  //
-  // @param {String} topicId - the id of the topic
-  // @returns ArticleListModel which contains the list of articles for the topic
-  Future<ArticleListModel>fetchArticles(topicId) async{
-    final Content content = Content();
-    try {
-      final dynamic data = await content.queryItems(<String, String>{
-        'q': '(type eq "OCEGettingStartedArticle" AND fields.topic eq "$topicId")',
-        'fields': 'all',
-        'orderBy': 'fields.published_date:desc',
-      });
-      ArticleListModel articleListModel = ArticleListModel.fromJson(data);
-      for (ArticleListItemModel articleListItemModel in articleListModel.articlesList) {
-        articleListItemModel.thumbnailUrl = getMediumRenditionUrl(articleListItemModel.thumbnailId);
+      dynamic data = await content.getTaxonomies();
+      dynamic taxonomies = data['items'];
+      List<String> idArray = [];
+      for (var taxonomy in taxonomies) {
+        idArray.add(taxonomy['id']);
       }
-      return articleListModel;
+      return idArray;
     } catch (exception) {
       rethrow;
     }
   }
 
-  // Get details of the specified article.
-  //
-  // @param {String} articleId - The id of the article
-  // @returns ArticleModel - the article
-  Future<ArticleModel>fetchArticle(articleId) async{
+  // Fetch the categories for the specified taxonomyId.
+  // @param {string} taxonomyId - the id of the taxonomy for which the categories are desired
+  // @returns {*} - categories for the specified taxonomyId
+  Future<List<dynamic>> fetchCategories(taxonomyId) async {
+    final Content content = Content();
+    dynamic data = await content.queryTaxonomyCategories({
+      'id': '$taxonomyId',
+    });
+    return data['items'];
+  }
+
+  // Fetch the items that belong to the category whose id is specified.
+  // @param {string} categoryId - the id of the category for which items are to be fetched
+  // @param {boolean} limit - whether a limit of 4 needs to be applieds
+  // @returns {*} - items that belong to the category
+  Future<dynamic> fetchItemsForCategory(String categoryId, bool limit) async {
+    final Content content = Content();
+    dynamic data = await content.queryItems({
+      'q': '(taxonomies.categories.nodes.id eq "$categoryId")',
+      'fields': 'all',
+      'expand': 'all',
+      'limit': limit ? '4' : '100',
+      'totalResults': 'true',
+    });
+    return data;
+  }
+
+  // Retrieve the thumbnail URL for the item specified.
+  // @param {String} identifier - the Id of the item whose thumbnail URL is required
+  // @returns {String} - the thumbnail URL
+  Future<String> retrieveThumbnailURL(identifier) async {
+    final Content content = Content();
+    dynamic data = await content.getItem({
+      'id': identifier,
+      'fields': 'all',
+      'expand': 'all',
+    });
+    String url = data['fields']['renditions'][1]['formats'][0]['links'][0]['href'];
+    return url;
+  }
+
+  // Get all the images needed for the app
+  String getMediumRenditionUrl(thumbnailId) {
     final Content content = Content();
     try {
-      final dynamic data = await content.getItem(<String, String?>{
-        'id': articleId,
-        'expand': 'all',
+      return content.getMediumRenditionUrl(<String, String>{
+        'id': thumbnailId,
       });
-      ArticleModel articleModel =  ArticleModel.fromJson(data);
-      articleModel.authorImageUrl = getMediumRenditionUrl(articleModel.authorImageId);
-      articleModel.imageUrl = getRenditionUrl(articleModel.imageId);
-      return articleModel;
     } catch (exception) {
       rethrow;
     }
   }
 
-  // Return the medium rendition URL for the specified item.
-  //
-  // @param {String} itemId - the Id of the item whose medium rendition URL is required
-  // @returns String - the medium rendition URL
-  String? getMediumRenditionUrl(itemId) {
+  // Get all the images needed for the app
+  String getRenditionUrl(imageId) {
     final Content content = Content();
     try {
-      return content.getMediumRenditionUrl(<String, String?>{
-        'id': itemId,
+      return content.getRenditionURL(<String, String>{
+        'id': imageId,
       });
     } catch (exception) {
       rethrow;
     }
   }
-
-  // Return the rendition URL for the specified item.
-  //
-  // @param {String} itemId - the Id of the item whose rendition URL is required
-  // @returns String - the rendition URL
-  String? getRenditionUrl(itemId) {
-    final Content content = Content();
-    try {
-      return content.getRenditionURL(<String, String?>{
-        'id': itemId,
-      });
-    } catch (exception) {
-      rethrow;
-    }
-  }
-
 }

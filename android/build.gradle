@@ -2,7 +2,7 @@
  * Copyright (c) 2022, Oracle and/or its affiliates.
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/
  */
-buildscript {
+ buildscript {
     ext.kotlin_version = '1.4.32'
     repositories {
         google()
