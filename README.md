@@ -2,6 +2,8 @@
 
 This repository holds the sample source code for a [Flutter](https://flutter.dev) implementation of an image gallery app powered by Oracle Content Management.
 
+## Getting Started
+
 Please follow the [tutorial](https://www.oracle.com/pls/topic/lookup?ctx=cloud&id=oce-flutter-gallery-sample).
 
 ## Images
